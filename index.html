@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="background">
+
     <!-- Màn hình Chào mừng -->
     <div id="welcome-card" class="card">
       <h1>Welcome to Flashcard Quiz!</h1>
@@ -26,15 +27,18 @@
     <!-- Màn hình Làm bài thi -->
     <div id="quiz-card" class="card hidden">
       <div class="quiz-header">
-        <span id="question-number">Question 1 of 50</span>
+        <span id="question-number"></span>
       </div>
+      
       <h2 id="question-text">Question content...</h2>
       <div id="select-type-badge" class="badge">Select one answer</div>
       
       <div id="options-container" class="options-group"></div>
       
-      <div class="quiz-footer">
-        <button id="next-btn" onclick="nextQuestion()">Submit Answer</button>
+      <!-- Cập nhật lại cụm nút điều hướng -->
+      <div class="quiz-footer" style="display: flex; gap: 10px; justify-content: space-between; margin-top: 20px;">
+        <button id="prev-btn" onclick="prevQuestion()">Previous</button>
+        <button id="next-btn" onclick="nextQuestion()">Next Question</button>
         <button id="submit-btn" class="hidden" onclick="finishExam()">End Exam</button>
       </div>
     </div>
@@ -43,8 +47,9 @@
     <div id="result-card" class="card hidden">
       <h1>Exam Results</h1>
       <div id="score-box" class="info-box"></div>
-      <button onclick="location.reload()">Try Again</button>
+      <button onclick="location.reload()" style="margin-top: 15px;">Try Again</button>
     </div>
+
   </div>
 
   <script src="questions.js"></script>
