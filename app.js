@@ -1,7 +1,7 @@
 let currentExamQuestions = [];
 let currentIndex = 0;
 let userAnswers = {};
-const QUESTIONS_PER_EXAM = 50;
+const QUESTIONS_PER_EXAM = 20;
 
 document.addEventListener("DOMContentLoaded", () => {
   initExamInfo();
