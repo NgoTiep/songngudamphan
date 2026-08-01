@@ -1159,5 +1159,3 @@ const questionBank = [
     type: "single"
   }
 ];
-
-export default questionBank;
