@@ -3,25 +3,37 @@ let currentIndex = 0;
 let userAnswers = {};
 const QUESTIONS_PER_EXAM = 50;
 
+// 1. Cập nhật số lượng câu hỏi khi trang tải xong
 document.addEventListener("DOMContentLoaded", () => {
-  if (typeof questionBank !== "undefined") {
-    document.getElementById("total-q").innerText = questionBank.length;
-    document.getElementById("exam-q").innerText = Math.min(QUESTIONS_PER_EXAM, questionBank.length);
-  }
+  initExamInfo();
 });
 
+function initExamInfo() {
+  if (typeof questionBank !== "undefined" && Array.isArray(questionBank)) {
+    const totalQ = document.getElementById("total-q");
+    const examQ = document.getElementById("exam-q");
+    
+    if (totalQ) totalQ.innerText = questionBank.length;
+    if (examQ) examQ.innerText = Math.min(QUESTIONS_PER_EXAM, questionBank.length);
+  } else {
+    console.warn("Chưa tìm thấy mảng 'questionBank' hoặc dữ liệu chưa sẵn sàng!");
+  }
+}
+
 function startExam() {
-  if (typeof questionBank === "undefined" || questionBank.length === 0) {
-    alert("Không tìm thấy dữ liệu câu hỏi trong questionBank!");
+  if (typeof questionBank === "undefined" || !Array.isArray(questionBank) || questionBank.length === 0) {
+    alert("Không tìm thấy dữ liệu câu hỏi trong questionBank! Vui lòng kiểm tra lại file dữ liệu.");
     return;
   }
 
+  // Shuffle & Slice
   let shuffled = [...questionBank].sort(() => 0.5 - Math.random());
-  currentExamQuestions = shuffled.slice(0, QUESTIONS_PER_EXAM);
+  currentExamQuestions = shuffled.slice(0, Math.min(QUESTIONS_PER_EXAM, questionBank.length));
   userAnswers = {};
 
-  document.getElementById("welcome-card").classList.add("hidden");
-  document.getElementById("quiz-card").classList.remove("hidden");
+  document.getElementById("welcome-card")?.classList.add("hidden");
+  document.getElementById("quiz-card")?.classList.remove("hidden");
+  
   showQuestion(0);
 }
 
@@ -29,14 +41,15 @@ function showQuestion(index) {
   currentIndex = index;
   const q = currentExamQuestions[index];
 
-  // 1. Ẩn chữ "Question X of Y" (Để trống theo yêu cầu)
+  // 1. Ẩn/Hiện số thứ tự câu hỏi
   const qNumElem = document.getElementById("question-number");
   if (qNumElem) qNumElem.innerText = "";
 
   // 2. Hiển thị nội dung câu hỏi
-  document.getElementById("question-text").innerText = q.question;
+  const qTextElem = document.getElementById("question-text");
+  if (qTextElem) qTextElem.innerText = q.question || "Nội dung câu hỏi bị trống";
 
-  // 3. Xử lý loại câu hỏi (Single hay Multiple)
+  // 3. Xử lý Single hay Multiple
   const correctArr = q.correctAnswers || q.correct || [];
   const isMultiple = q.type === "multiple" || correctArr.length > 1;
 
@@ -45,25 +58,31 @@ function showQuestion(index) {
     badgeElem.innerText = isMultiple ? "Select all that apply" : "Select one answer";
   }
 
-  // 4. Render danh sách đáp án linh hoạt (hỗ trợ cả options, choices, answers)
+  // 4. Render danh sách đáp án
   const optionsDiv = document.getElementById("options-container");
-  optionsDiv.innerHTML = "";
-  
-  const opts = q.options || q.choices || q.answers || [];
-  const inputType = isMultiple ? "checkbox" : "radio";
+  if (optionsDiv) {
+    optionsDiv.innerHTML = "";
+    const opts = q.options || q.choices || q.answers || [];
+    const inputType = isMultiple ? "checkbox" : "radio";
 
-  opts.forEach((opt, optIndex) => {
-    const isChecked = (userAnswers[currentIndex] || []).includes(optIndex) ? "checked" : "";
-    
-    optionsDiv.innerHTML += `
-      <label class="option-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;">
-        <input type="${inputType}" name="option" value="${optIndex}" ${isChecked} onchange="saveAnswer()">
+    opts.forEach((opt, optIndex) => {
+      const isChecked = (userAnswers[currentIndex] || []).includes(optIndex) ? "checked" : "";
+      
+      const label = document.createElement("label");
+      label.className = "option-item";
+      label.style.cssText = "display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer;";
+      label.innerHTML = `
+        <input type="${inputType}" name="option" value="${optIndex}" ${isChecked}>
         <span>${opt}</span>
-      </label>
-    `;
-  });
+      `;
+      
+      // Bắt sự kiện change an toàn
+      label.querySelector("input").addEventListener("change", saveAnswer);
+      optionsDiv.appendChild(label);
+    });
+  }
 
-  // 5. Nút bấm Chuyển câu / Nộp bài
+  // 5. Điều khiển nút Chuyển câu / Nộp bài
   const nextBtn = document.getElementById("next-btn");
   const submitBtn = document.getElementById("submit-btn");
 
@@ -94,25 +113,26 @@ function prevQuestion() {
   }
 }
 
-// Hàm Nộp Bài & Tính Điểm & Chi Tiết Đáp Án
 function submitExam() {
   let score = 0;
 
-  // 1. Tính điểm
+  // 1. Tính điểm chuẩn xác
   currentExamQuestions.forEach((q, idx) => {
-    const userSelected = userAnswers[idx] || [];
-    const correctArr = q.correctAnswers || q.correct || [];
+    const userSelected = (userAnswers[idx] || []).sort((a, b) => a - b);
+    const correctArr = [...(q.correctAnswers || q.correct || [])].sort((a, b) => a - b);
 
     const isCorrect = userSelected.length === correctArr.length &&
-                      userSelected.every(val => correctArr.includes(val));
+                      userSelected.every((val, i) => val === correctArr[i]);
     if (isCorrect) score++;
   });
 
-  const percentage = Math.round((score / currentExamQuestions.length) * 100);
+  const percentage = currentExamQuestions.length > 0 
+    ? Math.round((score / currentExamQuestions.length) * 100) 
+    : 0;
   const passed = percentage >= 70;
 
-  // 2. Chuyển thẻ giao diện
-  document.getElementById("quiz-card").classList.add("hidden");
+  // 2. Chuyển UI
+  document.getElementById("quiz-card")?.classList.add("hidden");
   const resultCard = document.getElementById("result-card");
   if (resultCard) resultCard.classList.remove("hidden");
 
@@ -126,7 +146,7 @@ function submitExam() {
     `;
   }
 
-  // 4. Render khu vực Xem lại bài làm (Chi tiết Đúng / Sai từng câu)
+  // 4. Render khu vực Xem lại bài làm
   let reviewContainer = document.getElementById("review-container");
   if (!reviewContainer) {
     reviewContainer = document.createElement("div");
@@ -134,7 +154,7 @@ function submitExam() {
     if (resultCard) resultCard.appendChild(reviewContainer);
   }
 
-  reviewContainer.innerHTML = "<h2 style='margin-top:20px;'>Chi tiết bài làm:</h2>";
+  reviewContainer.innerHTML = "<h3 style='margin-top:20px;'>Chi tiết bài làm:</h3>";
 
   currentExamQuestions.forEach((q, idx) => {
     const userSelected = userAnswers[idx] || [];
@@ -145,15 +165,17 @@ function submitExam() {
                       userSelected.every(val => correctArr.includes(val));
 
     const qBox = document.createElement("div");
-    qBox.style.margin = "15px 0";
-    qBox.style.padding = "15px";
-    qBox.style.border = "1px solid #ccc";
-    qBox.style.borderRadius = "8px";
-    qBox.style.textAlign = "left";
-    qBox.style.backgroundColor = isCorrect ? "#e6fffa" : "#fff5f5";
+    qBox.style.cssText = `
+      margin: 15px 0;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: left;
+      background-color: ${isCorrect ? '#e6fffa' : '#fff5f5'};
+    `;
 
-    // Chỉ hiển thị nội dung câu hỏi
-    let htmlContent = `<p style="font-weight: bold; font-size: 16px;">${q.question}</p><ul style="list-style-type: none; padding-left: 0;">`;
+    let htmlContent = `<p style="font-weight: bold; font-size: 16px;">Câu ${idx + 1}: ${q.question}</p>
+                       <ul style="list-style-type: none; padding-left: 0;">`;
 
     opts.forEach((opt, optIdx) => {
       const isSelected = userSelected.includes(optIdx);
@@ -185,7 +207,6 @@ function submitExam() {
   });
 }
 
-// Khai báo alias để không bị lỗi nếu HTML gọi nhầm finishExam()
 function finishExam() {
   submitExam();
 }
