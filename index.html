@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcard Quiz App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background">
+    <!-- Màn hình Chào mừng -->
+    <div id="welcome-card" class="card">
+      <h1>Welcome to Flashcard Quiz!</h1>
+      <div class="info-box">
+        <h3>Exam Information</h3>
+        <p>📚 Total Question Bank: <b id="total-q">0</b> questions</p>
+        <p>📝 Questions per Exam: <b id="exam-q">0</b> questions</p>
+        <p>✅ Multiple correct answers supported</p>
+        <p>⏱️ Randomly selected each time</p>
+        <p>📊 Pass Grade: <b>70%</b></p>
+      </div>
+      <p class="sub-text">Some questions may have multiple correct answers. Select all that apply before submitting!</p>
+      <button id="start-btn" onclick="startExam()">Start Exam</button>
+    </div>
+
+    <!-- Màn hình Làm bài thi -->
+    <div id="quiz-card" class="card hidden">
+      <div class="quiz-header">
+        <span id="question-number">Question 1 of 50</span>
+      </div>
+      <h2 id="question-text">Question content...</h2>
+      <div id="select-type-badge" class="badge">Select one answer</div>
+      
+      <div id="options-container" class="options-group"></div>
+      
+      <div class="quiz-footer">
+        <button id="next-btn" onclick="nextQuestion()">Submit Answer</button>
+        <button id="submit-btn" class="hidden" onclick="finishExam()">End Exam</button>
+      </div>
+    </div>
+
+    <!-- Màn hình Kết quả -->
+    <div id="result-card" class="card hidden">
+      <h1>Exam Results</h1>
+      <div id="score-box" class="info-box"></div>
+      <button onclick="location.reload()">Try Again</button>
+    </div>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
